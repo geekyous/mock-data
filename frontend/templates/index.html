@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仿真数据 服务端</title>
+    <link href="{{ url_for('static', path='/css/all.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', path='/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', path='/css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <div class="container">
+        <a class="navbar-brand" href="#">
+            <i class="fas fa-server me-2"></i>仿真数据 服务端
+        </a>
+        <div class="navbar-nav ms-auto">
+                <span class="navbar-text">
+                    <i class="fas fa-circle text-success me-1"></i>服务运行中
+                </span>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <div class="row g-3 g-lg-4">
+        <!-- 服务信息模块（列1） -->
+        <div class="col-12 col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>服务信息
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 g-lg-4">
+                        <div class="col-12">
+                            <div class="mb-2">
+                                <strong>服务地址:</strong>
+                                <code>http://localhost:8000</code>
+                            </div>
+                            <div class="mb-2">
+                                <strong>API文档:</strong>
+                                <a href="/docs" target="_blank" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-book me-1"></i>Swagger UI
+                                </a>
+                            </div>
+                            <div class="mb-2">
+                                <strong>健康检查:</strong>
+                                <button class="btn btn-sm btn-outline-success" onclick="checkHealth()">
+                                    <i class="fas fa-heartbeat me-1"></i>检查状态
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="mb-2">
+                                <strong>服务器时间:</strong>
+                                <div class="text-info" id="serverTime">--</div>
+                            </div>
+                            <div class="mb-2">
+                                <strong>服务状态:</strong>
+                                <div class="text-success" id="serviceStatus">运行中</div>
+                            </div>
+                            <div class="mb-2">
+                                <strong>最后更新:</strong>
+                                <div class="text-muted" id="lastUpdate">--</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <button class="btn btn-outline-info" onclick="refreshServiceInfo()">
+                            <i class="fas fa-sync-alt me-1"></i>刷新信息
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 数据库配置信息模块（列2） -->
+        <div class="col-12 col-lg-6">
+            <div class="card h-100">
+                <div class="card-header bg-dark text-white d-flex align-items-center justify-content-between">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-database me-2"></i>数据库配置信息
+                    </h5>
+                    <span class="small text-white-50">仅本地保存，不会上传</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 g-lg-4">
+                        <div class="col-6">
+                            <label for="dbHost" class="form-label">主机</label>
+                            <input type="text" class="form-control" id="dbHost" placeholder="例如: 127.0.0.1">
+                        </div>
+                        <div class="col-6">
+                            <label for="dbPort" class="form-label">端口</label>
+                            <input type="number" class="form-control" id="dbPort" placeholder="例如: 5432">
+                        </div>
+                        <div class="col-6">
+                            <label for="dbUser" class="form-label">用户名</label>
+                            <input type="text" class="form-control" id="dbUser" placeholder="例如: admin">
+                        </div>
+                        <div class="col-6">
+                            <label for="dbPwd" class="form-label">密码</label>
+                            <input type="text" class="form-control" id="dbPwd" placeholder="例如: admin">
+                        </div>
+                        <div class="col-12">
+                            <label for="dbName" class="form-label">数据库名</label>
+                            <input type="text" class="form-control" id="dbName" placeholder="例如: app_db">
+                        </div>
+                        <div class="col-12">
+                            <label for="dbRemark" class="form-label">备注（可选）</label>
+                            <input type="text" class="form-control" id="dbRemark" placeholder="例如: 测试环境/生产环境">
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div>
+                            <span class="me-2">连接状态:</span>
+                            <span id="dbStatus" class="badge bg-secondary">未测试</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-secondary" onclick="loadDbConfig()">
+                                <i class="fas fa-rotate me-1"></i>读取
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="saveDbConfig()">
+                                <i class="fas fa-save me-1"></i>保存
+                            </button>
+                            <button class="btn btn-success" onclick="testDbConnection()">
+                                <i class="fas fa-plug me-1"></i>测试连接
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 仿真数据模块（单独一行，占满与上方两列相同总宽度） -->
+        <div class="col-12">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-database me-2"></i>仿真数据生成
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- 四个数据块（先显示） -->
+                    <div class="row g-3 g-lg-4">
+                        <div class="col-12 col-md-6">
+                            <div class="card h-100 border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="card-title mb-0">
+                                        <i class="fas fa-calendar-week me-2"></i>周计划数据
+                                    </h6>
+                                </div>
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-calendar-alt fa-3x text-primary"></i>
+                                    </div>
+                                    <p class="card-text">生成模拟的周工作计划数据</p>
+                                    <button class="btn btn-primary" onclick="">
+                                        <i class="fas fa-magic me-1"></i>生成数据
+                                    </button>
+                                    <div class="mt-2">
+                                        <small class="text-muted" id="weeklyPlanStatus">未生成</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="card h-100 border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="card-title mb-0">
+                                        <i class="fas fa-users me-2"></i>班组数据
+                                    </h6>
+                                </div>
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-user-friends fa-3x text-success"></i>
+                                    </div>
+                                    <p class="card-text">生成模拟的班组信息数据</p>
+                                    <button class="btn btn-success" onclick="">
+                                        <i class="fas fa-magic me-1"></i>生成数据
+                                    </button>
+                                    <div class="mt-2">
+                                        <small class="text-muted" id="teamDataStatus">未生成</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="card h-100 border-warning">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="card-title mb-0">
+                                        <i class="fas fa-user-tie me-2"></i>班组人员数据
+                                    </h6>
+                                </div>
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-user-circle fa-3x text-warning"></i>
+                                    </div>
+                                    <p class="card-text">生成模拟的班组人员信息</p>
+                                    <button class="btn btn-warning" onclick="">
+                                        <i class="fas fa-magic me-1"></i>生成数据
+                                    </button>
+                                    <div class="mt-2">
+                                        <small class="text-muted" id="teamMemberDataStatus">未生成</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <div class="card h-100 border-danger">
+                                <div class="card-header bg-danger text-white">
+                                    <h6 class="card-title mb-0">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>风险底数一本账
+                                    </h6>
+                                </div>
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-shield-alt fa-3x text-danger"></i>
+                                    </div>
+                                    <p class="card-text">生成模拟的风险管理数据</p>
+                                    <button class="btn btn-danger" onclick="">
+                                        <i class="fas fa-magic me-1"></i>生成数据
+                                    </button>
+                                    <div class="mt-2">
+                                        <small class="text-muted" id="riskDataStatus">未生成</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 数据生成配置（移动到下方显示） -->
+                    <div class="card border-secondary mt-3">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-cog me-2"></i>数据生成配置
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3 g-3">
+                                <div class="col-12 col-md-6">
+                                    <label for="startDate" class="form-label">开始时间</label>
+                                    <input type="date" class="form-control" id="startDate" value="">
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label for="endDate" class="form-label">结束时间</label>
+                                    <input type="date" class="form-control" id="endDate" value="">
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <button class="btn btn-outline-info" onclick="setDefaultDateRange()">
+                                    <i class="fas fa-calendar me-1"></i>设置默认时间
+                                </button>
+                                <button class="btn btn-primary" onclick="generateAllData()">
+                                    <i class="fas fa-rocket me-2"></i>批量生成所有数据
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 响应消息提示 -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="responseToast" class="toast" role="alert">
+        <div class="toast-header">
+            <strong class="me-auto">响应消息</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body" id="toastMessage">
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', path='/js/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ url_for('static', path='/js/app.js') }}"></script>
+</body>
+</html>

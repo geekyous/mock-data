@@ -1,0 +1,49 @@
+name: Build Linux Executable
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ 拉取代码
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2️⃣ 设置 Python 3.12
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # 3️⃣ 安装依赖
+      - name: Install dependencies
+        working-directory: server
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install pyinstaller
+
+      # 4️⃣ 使用 PyInstaller 打包
+      - name: Build with PyInstaller
+        working-directory: server
+        run: |
+          pyinstaller --onefile main.py
+
+      # 5️⃣ 重命名产物
+      - name: Rename artifact
+        working-directory: server
+        run: mv dist/main dist/main-linux
+
+      # 6️⃣ 上传 release 产物
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: server/dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
