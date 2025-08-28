@@ -1,7 +1,6 @@
 import json
 from datetime import datetime
 from http.client import HTTPException
-from typing import List
 
 import uvicorn
 from fastapi import FastAPI, Request, HTTPException
@@ -21,10 +20,10 @@ app = FastAPI(
 )
 
 # 挂载静态文件目录
-app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
+app.mount("/static", StaticFiles(directory="./frontend/static"), name="static")
 
 # 设置模板目录
-templates = Jinja2Templates(directory="frontend/templates")
+templates = Jinja2Templates(directory="./frontend/templates")
 
 
 # 请求模型

@@ -20,7 +20,7 @@ class Mock:
         self.fake = Faker()
         self.random = random
         self.datetime = datetime
-        self.SINGLE_PROJECT_CODE_LIST = []
+        self.SINGLE_PROJECT_CODE_LIST = ()
         self.WEEK_PLANS_RISK_PRECAUTION = {}
         self.WEEK_PLANS_TEAM = {}
         self.TEAM_ID_LIST = []
@@ -46,7 +46,7 @@ class Mock:
         return self.result
 
     def list_single_project_code(self):
-        single_project_select_query = "SELECT  single_project_code FROM jj_single_info"
+        single_project_select_query = "SELECT  DISTINCT single_project_code FROM jj_single_info"
         self.cursor.execute(single_project_select_query)
         fetched_data = self.cursor.fetchall()
         self.SINGLE_PROJECT_CODE_LIST = [row[0] for row in fetched_data]
@@ -70,7 +70,7 @@ class Mock:
                        """
         data_to_insert = []
         current_time = datetime.now()
-
+        risk_precaution_total = []
         for single_project_code in self.SINGLE_PROJECT_CODE_LIST:
             size = random.randint(1, 5)
             risk_precaution_ids = []
@@ -81,6 +81,7 @@ class Mock:
                 # 周计划与风险一本账关联
                 risk_precaution_ids.append(
                     {"risk_precaution_id": risk_precaution_id, "single_project_code": single_project_code})
+                risk_precaution_total.append(risk_precaution_id)
                 team_id = str(uuid.uuid4().hex)[:32]
                 team_ids.append({"team_id": team_id, "single_project_code": single_project_code})
                 # 周计划与班组关联
@@ -212,6 +213,7 @@ class Mock:
                 data_to_insert.append(record)
         cursor = self.conn.cursor()
         cursor.executemany(insert_query, data_to_insert)
+        print(f"风险一本账：成功插入 {cursor.rowcount} 条风险一本账数据！")
         print(f"风险一本账：成功插入 {cursor.rowcount} 条风险一本账数据！")
         self.result["risk_precaution_num"] = cursor.rowcount
 
